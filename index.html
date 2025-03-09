@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Application Futuriste de Gestion de Cafétéria</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    /* ------------------------------ */
+    /* STYLES GÉNÉRAUX ET RESPONSIVES */
+    /* ------------------------------ */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: url('images/background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      transition: background 0.5s;
+    }
+    header {
+      text-align: center;
+      padding: 20px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      position: relative;
+    }
+    #cafeteriaName { /* par défaut vide */ }
+    #languageToggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+    /* Boutons de langue */
+    #languageToggle button {
+      margin: 0 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+      border: none;
+      background: #333;
+      color: #fff;
+      border-radius: 5px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+    #languageToggle button:hover {
+      transform: scale(1.1);
+    }
+    /* Conteneur principal en colonne */
+    #mainContainer {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+    }
+    .column {
+      width: 100%;
+      margin: 10px 0;
+      background: rgba(255,255,255,0.8);
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      transition: transform 0.3s;
+    }
+    /* Désactivation de l'effet hover sur mobile */
+    @media (hover: none) {
+      .column:hover { transform: none; }
+    }
+    #categories, #order {
+      max-width: 250px;
+      margin: 0 auto;
+    }
+    /* Liste des catégories */
+    .category-item {
+      list-style: none;
+      padding: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .category-item:hover {
+      background: #ddd;
+    }
+    /* ------------------------------ */
+    /* CARTES DE PRODUITS */
+    /* ------------------------------ */
+    #productList {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .product-item {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      overflow: hidden;
+      margin: 10px;
+      width: 150px;
+      transition: transform 0.3s;
+      text-align: center;
+      cursor: pointer;
+    }
+    .product-item:hover {
+      transform: scale(1.05);
+    }
+    .product-item img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .product-item p {
+      margin: 10px 0;
+      color: #333;
+      font-weight: bold;
+    }
+    /* ------------------------------ */
+    /* BOUTONS DE COMMANDE & ADMINISTRATION */
+    /* ------------------------------ */
+    #orderButtons {
+      text-align: center;
+    }
+    #orderButtons button {
+      margin: 5px;
+      padding: 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+    #orderButtons button:hover {
+      transform: translateY(-3px);
+    }
+    /* Boutons colorés pour distinguer les actions */
+    #btnConfirm { background: #4CAF50; color: #fff; }  /* vert */
+    #btnCancel { background: #f44336; color: #fff; }     /* rouge */
+    #btnPrint  { background: #2196F3; color: #fff; }     /* bleu */
+    #btnStats  { background: #FF9800; color: #fff; }     /* orange */
+    /* Boutons utilitaires aux couleurs variées */
+    #utilityButtons {
+      position: relative;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+    }
+    #utilityButtons button {
+      margin: 5px;
+      padding: 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+    #utilityButtons button:hover {
+      transform: translateY(-3px);
+    }
+    /* Couleurs variées pour les boutons utilitaires */
+    #utilityButtons button:nth-child(1) { background: #9C27B0; } /* violet */
+    #utilityButtons button:nth-child(2) { background: #795548; } /* marron */
+    #utilityButtons button:nth-child(3) { background: #009688; } /* teal */
+    /* Pour mobile, repositionne les boutons utilitaires sous la section "Commande en cours" */
+    @media (max-width: 768px) {
+      #utilityButtons {
+        position: static;
+        margin: 20px auto;
+        flex-direction: row;
+        justify-content: center;
+      }
+      #orderButtons button {
+        padding: 15px;
+        margin: 8px;
+        font-size: 16px;
+        min-width: 120px;
+      }
+      #utilityButtons button {
+        padding: 12px 20px;
+        margin: 8px;
+        font-size: 16px;
+      }
+    }
+    /* ------------------------------ */
+    /* MODALS & AUTRES STYLES */
+    /* ------------------------------ */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background: rgba(0,0,0,0.7);
+    }
+    .modal-content {
+      background: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 600px;
+      position: relative;
+      max-height: 80vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .close {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    /* Calculatrice */
+    #calculator {
+      text-align: center;
+    }
+    #calcDisplay {
+      width: 100%;
+      padding: 10px;
+      font-size: 1.2em;
+      text-align: right;
+      margin-bottom: 10px;
+    }
+    #calcButtons button {
+      width: 22%;
+      margin: 1%;
+      padding: 10px;
+      font-size: 1em;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+    #calcButtons button:hover {
+      transform: translateY(-3px);
+    }
+    /* Mode sombre */
+    body.dark {
+      background: #121212;
+      color: #e0e0e0;
+    }
+    body.dark header {
+      background: rgba(0,0,0,0.8);
+    }
+    body.dark .column {
+      background: rgba(50,50,50,0.8);
+    }
+  </style>
+</head>
+<body>
+  <!-- En-tête -->
+  <header>
+    <h1 id="cafeteriaName"></h1>
+    <div id="languageToggle">
+      <button onclick="setLanguage('fr')">Français</button>
+      <button onclick="setLanguage('ar')">Arabe</button>
+    </div>
+  </header>
+
+  <!-- Conteneur principal -->
+  <div id="mainContainer">
+    <!-- Catégories -->
+    <div id="categories" class="column">
+      <h2 data-i18n="categories">Catégories</h2>
+      <ul id="categoryList"></ul>
+    </div>
+    <!-- Produits sous forme de cartes -->
+    <div id="products" class="column">
+      <h2 data-i18n="products">Produits</h2>
+      <div id="productList"></div>
+    </div>
+    <!-- Commande et boutons d'action -->
+    <div id="order" class="column">
+      <h2 data-i18n="order">Commande en cours</h2>
+      <div id="orderList"></div>
+      <div id="orderButtons">
+        <button id="btnConfirm" onclick="confirmOrder()" data-i18n="confirm">Confirmer</button>
+        <button id="btnCancel" onclick="cancelOrder()" data-i18n="cancel">Annuler</button>
+        <button id="btnPrint" onclick="printTicket()" data-i18n="print">Imprimer</button>
+        <button id="btnStats" onclick="openAdminModal()" data-i18n="stats">Paramètres</button>
+      </div>
+    </div>
+    <!-- Boutons utilitaires (placés différemment sur mobile) -->
+    <div id="utilityButtons">
+      <button onclick="toggleFullScreen()" data-i18n="fullscreen">Plein écran</button>
+      <button onclick="toggleDarkMode()" data-i18n="toggleMode">Mode sombre/clair</button>
+      <button onclick="openCalculator()" data-i18n="calculator">Calculatrice</button>
+    </div>
+  </div>
+
+  <!-- Modal Calculatrice -->
+  <div id="calculatorModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeCalculator()">×</span>
+      <div id="calculator">
+        <input type="text" id="calcDisplay" disabled>
+        <div id="calcButtons">
+          <button onclick="calcInput('7')">7</button>
+          <button onclick="calcInput('8')">8</button>
+          <button onclick="calcInput('9')">9</button>
+          <button onclick="calcInput('/')">/</button>
+          <button onclick="calcInput('4')">4</button>
+          <button onclick="calcInput('5')">5</button>
+          <button onclick="calcInput('6')">6</button>
+          <button onclick="calcInput('*')">*</button>
+          <button onclick="calcInput('1')">1</button>
+          <button onclick="calcInput('2')">2</button>
+          <button onclick="calcInput('3')">3</button>
+          <button onclick="calcInput('-')">-</button>
+          <button onclick="calcInput('0')">0</button>
+          <button onclick="calcInput('.')">.</button>
+          <button onclick="calculateResult()">=</button>
+          <button onclick="calcInput('+')">+</button>
+          <button onclick="clearCalc()">C</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Administration / Paramètres -->
+  <div id="adminModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeAdminModal()">×</span>
+      <h2 data-i18n="adminSettings">Paramètres Admin</h2>
+      <!-- Vérification du code -->
+      <div id="adminCodeSection" style="display: none;">
+        <label data-i18n="adminCode">Code Admin :</label>
+        <input type="password" id="adminCodeInput">
+        <button onclick="checkAdminCode()" data-i18n="enter">Entrer</button>
+        <button onclick="accessWithoutCode()" data-i18n="accessWithoutCode">Accéder sans code</button>
+      </div>
+      <!-- Panneau d'administration -->
+      <div id="adminPanel">
+        <div id="adminSecurity">
+          <label>
+            <input type="checkbox" id="enableAdminCode" onchange="toggleAdminCodeProtection(this.checked)">
+            Utiliser un code d'administration
+          </label>
+          <div id="adminCodeSetup" style="display:none;">
+            <label>Définir le code :</label>
+            <input type="password" id="newAdminCode">
+            <button onclick="setAdminCode()">Enregistrer le code</button>
+          </div>
+        </div>
+        <button onclick="openStatsWindow()" data-i18n="viewStatistics">Voir Statistiques</button>
+        <h3 data-i18n="settings">Paramètres</h3>
+        <div>
+          <label data-i18n="cafeteriaName">Nom de la Cafétéria :</label>
+          <input type="text" id="editCafeteriaName">
+        </div>
+        <div>
+          <label data-i18n="currency">Devise :</label>
+          <input type="text" id="editCurrency">
+        </div>
+        <div>
+          <label data-i18n="backgroundImage">Image de Fond :</label>
+          <input type="file" id="editBackgroundImage" accept="image/*">
+        </div>
+        <!-- Gestion des catégories -->
+        <div id="adminCategories">
+          <h3 data-i18n="manageCategories">Gérer Catégories</h3>
+          <ul id="adminCategoryList"></ul>
+          <input type="text" id="newCategoryName" placeholder="Nom de la catégorie">
+          <button onclick="addCategory()" data-i18n="addCategory">Ajouter Catégorie</button>
+        </div>
+        <!-- Gestion des produits -->
+        <div id="adminProducts">
+          <h3 data-i18n="manageProducts">Gérer Produits</h3>
+          <ul id="adminProductList"></ul>
+          <div>
+            <input type="text" id="newProductName" placeholder="Nom du produit">
+            <label for="newProductImage" data-i18n="chooseFile">Choisir un fichier</label>
+            <input type="file" id="newProductImage" accept="image/*">
+            <input type="text" id="newProductPrices" placeholder="Prix (séparés par des virgules)">
+            <select id="newProductCategory"></select>
+            <button onclick="addProduct()" data-i18n="addProduct">Ajouter Produit</button>
+          </div>
+        </div>
+        <div>
+          <button onclick="saveAdminSettings()" data-i18n="saveSettings">Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Le script JavaScript reste inchangé -->
+  <script>
+    /***** VARIABLES ET TRADUCTIONS *****/
+    let language = 'fr'; // langue par défaut
+    let isCodeEnabled = false; // protection désactivée par défaut
+    let adminCode = "1234"; // code admin par défaut
+    const translations = {
+      fr: {
+        categories: "Catégories",
+        products: "Produits",
+        order: "Commande en cours",
+        confirm: "Confirmer",
+        cancel: "Annuler",
+        print: "Imprimer",
+        stats: "Paramètres",
+        adminSettings: "Paramètres Admin",
+        adminCode: "Code Admin :",
+        enter: "Entrer",
+        accessWithoutCode: "Accéder sans code",
+        settings: "Paramètres",
+        cafeteriaName: "Nom de la Cafétéria :",
+        currency: "Devise :",
+        backgroundImage: "Image de Fond :",
+        chooseFile: "Choisir un fichier",
+        manageCategories: "Gérer Catégories",
+        addCategory: "Ajouter Catégorie",
+        manageProducts: "Gérer Produits",
+        addProduct: "Ajouter Produit",
+        saveSettings: "Sauvegarder",
+        statistics: "Statistiques",
+        viewStatistics: "Voir Statistiques",
+        resetStats: "Réinitialiser les statistiques",
+        dailySales: "Ventes journalières",
+        monthlySales: "Ventes mensuelles",
+        fullscreen: "Plein écran",
+        toggleMode: "Mode sombre/clair",
+        calculator: "Calculatrice",
+        language: "Langue"
+      },
+      ar: {
+        categories: "الفئات",
+        products: "المنتجات",
+        order: "الطلب الحالي",
+        confirm: "تأكيد",
+        cancel: "إلغاء",
+        print: "طباعة",
+        stats: "الإعدادات",
+        adminSettings: "إعدادات الإدارة",
+        adminCode: "رمز الإدارة:",
+        enter: "دخول",
+        accessWithoutCode: "الدخول بدون رمز",
+        settings: "الإعدادات",
+        cafeteriaName: "اسم الكافتيريا:",
+        currency: "العملة:",
+        backgroundImage: "صورة الخلفية:",
+        chooseFile: "اختر ملف",
+        manageCategories: "إدارة الفئات",
+        addCategory: "إضافة فئة",
+        manageProducts: "إدارة المنتجات",
+        addProduct: "إضافة منتج",
+        saveSettings: "حفظ",
+        statistics: "الإحصائيات",
+        viewStatistics: "عرض الإحصائيات",
+        resetStats: "إعادة تعيين الإحصائيات",
+        dailySales: "المبيعات اليومية",
+        monthlySales: "المبيعات الشهرية",
+        fullscreen: "ملء الشاشة",
+        toggleMode: "الوضع الداكن/الفاتح",
+        calculator: "آلة حاسبة",
+        language: "اللغة"
+      }
+    };
+
+    let categories = [
+      { id: 0, name: language === 'fr' ? "Tous les produits" : "كل المنتجات" },
+      { id: 1, name: "Boissons" },
+      { id: 2, name: "Snacks" },
+      { id: 3, name: "Desserts" },
+      { id: 4, name: "Sandwichs" }
+    ];
+    let products = [
+      { id: 1, name: "Café", category: 1, image: "images/cafe.jpg", prices: [10,12,15,20], sold: 0 },
+      { id: 2, name: "Thé", category: 1, image: "images/the.jpg", prices: [8,10,12], sold: 0 },
+      { id: 3, name: "Jus d'orange", category: 1, image: "images/jus.jpg", prices: [15], sold: 0 },
+      { id: 4, name: "Croissant", category: 2, image: "images/croissant.jpg", prices: [5], sold: 0 },
+      { id: 5, name: "Muffin", category: 2, image: "images/muffin.jpg", prices: [7], sold: 0 }
+    ];
+    let currentOrder = [];
+    let dailyRevenue = 0;
+    let monthlyRevenue = 0;
+    let darkMode = false;
+    let currency = "$"; // variable par défaut pour la devise
+
+    /***** INTERNATIONALISATION *****/
+    function setLanguage(lang) {
+      language = lang;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if(translations[language] && translations[language][key]) {
+          el.innerText = translations[language][key];
+        }
+      });
+      document.body.style.direction = (language === 'ar') ? 'rtl' : 'ltr';
+      renderCategories();
+      renderProducts();
+    }
+
+    /***** RENDER DES CATÉGORIES, PRODUITS ET COMMANDE *****/
+    function renderCategories() {
+      const list = document.getElementById('categoryList');
+      list.innerHTML = "";
+      categories.forEach(cat => {
+        const li = document.createElement('li');
+        li.innerText = cat.name;
+        li.classList.add('category-item');
+        li.onclick = () => { renderProducts(cat.id); };
+        list.appendChild(li);
+      });
+    }
+    function renderProducts(categoryId = 0) {
+      const container = document.getElementById('productList');
+      container.innerHTML = "";
+      const filtered = (categoryId === 0) ? products : products.filter(p => p.category === categoryId);
+      filtered.forEach(prod => {
+        const div = document.createElement('div');
+        div.classList.add('product-item');
+        div.innerHTML = `
+          <img src="${prod.image}" alt="${prod.name}" onclick="productClick(${prod.id})">
+          <p>${prod.name}</p>
+          <p>${currency} ${prod.prices[0]}</p>
+        `;
+        container.appendChild(div);
+      });
+    }
+    function renderOrder() {
+      const container = document.getElementById('orderList');
+      container.innerHTML = "";
+      let total = 0;
+      currentOrder.forEach(item => {
+        const div = document.createElement('div');
+        div.classList.add('order-item');
+        div.innerText = `${item.name} x${item.quantity} = ${currency} ${item.price * item.quantity}`;
+        total += item.price * item.quantity;
+        container.appendChild(div);
+      });
+      const totalDiv = document.createElement('div');
+      totalDiv.classList.add('order-total');
+      totalDiv.innerText = `${currency} ${total}`;
+      container.appendChild(totalDiv);
+    }
+
+    /***** GESTION DES PRODUITS *****/
+    function productClick(productId) {
+      const product = products.find(p => p.id === productId);
+      if(product) {
+        if(product.prices.length > 1) {
+          let priceStr = product.prices.join(", ");
+          let selected = prompt(`Choisissez un prix pour ${product.name} (${priceStr} ${currency}) :`, product.prices[0]);
+          selected = parseFloat(selected);
+          if(product.prices.includes(selected)) {
+            addToOrder(product, selected);
+          } else {
+            alert("Prix invalide.");
+          }
+        } else {
+          addToOrder(product, product.prices[0]);
+        }
+      }
+    }
+    function addToOrder(product, price) {
+      if(navigator.vibrate) navigator.vibrate(50);
+      let orderItem = currentOrder.find(item => item.id === product.id && item.price === price);
+      if(orderItem) {
+        orderItem.quantity++;
+      } else {
+        currentOrder.push({ id: product.id, name: product.name, price: price, quantity: 1 });
+      }
+      product.sold += 1;
+      renderOrder();
+    }
+
+    /***** COMMANDE *****/
+    function confirmOrder() {
+      let total = currentOrder.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      dailyRevenue += total;
+      monthlyRevenue += total;
+      alert("Commande confirmée !");
+      currentOrder = [];
+      renderOrder();
+      backupData();
+    }
+    function cancelOrder() {
+      currentOrder = [];
+      renderOrder();
+    }
+    function printTicket() {
+      let total = currentOrder.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      let now = new Date();
+      let ticket = `
+        <h1>${document.getElementById('cafeteriaName').innerText}</h1>
+        <p>${now.toLocaleString()}</p>
+        <ul>
+      `;
+      currentOrder.forEach(item => {
+        ticket += `<li>${item.name} x${item.quantity} = ${currency} ${item.price * item.quantity}</li>`;
+      });
+      ticket += `</ul>
+        <h3>Total: ${currency} ${total}</h3>
+        <p>Merci de votre visite !</p>
+      `;
+      let win = window.open("", "Ticket", "width=300,height=400");
+      win.document.write(ticket);
+      win.print();
+    }
+
+    /***** CALCULATRICE *****/
+    function openCalculator() {
+      document.getElementById('calculatorModal').style.display = 'block';
+    }
+    function closeCalculator() {
+      document.getElementById('calculatorModal').style.display = 'none';
+    }
+    function calcInput(val) {
+      document.getElementById('calcDisplay').value += val;
+    }
+    function calculateResult() {
+      try {
+        let result = eval(document.getElementById('calcDisplay').value);
+        document.getElementById('calcDisplay').value = result;
+      } catch(e) {
+        document.getElementById('calcDisplay').value = "Erreur";
+      }
+    }
+    function clearCalc() {
+      document.getElementById('calcDisplay').value = "";
+    }
+
+    /***** PLEIN ÉCRAN & MODE SOMBRE/CLAIR *****/
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        if(document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+    function toggleDarkMode() {
+      darkMode = !darkMode;
+      document.body.classList.toggle('dark', darkMode);
+    }
+
+    /***** ADMINISTRATION & PARAMÈTRES *****/
+    function openAdminModal() {
+      if(isCodeEnabled) {
+        document.getElementById('adminCodeSection').style.display = 'block';
+        document.getElementById('adminPanel').style.display = 'none';
+      } else {
+        document.getElementById('adminCodeSection').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        refreshAdminLists();
+      }
+      document.getElementById('adminModal').style.display = 'block';
+    }
+    function closeAdminModal() {
+      document.getElementById('adminModal').style.display = 'none';
+    }
+    function checkAdminCode() {
+      let code = document.getElementById('adminCodeInput').value;
+      if(code === adminCode) {
+        document.getElementById('adminCodeSection').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        refreshAdminLists();
+      } else {
+        alert("Code incorrect !");
+      }
+    }
+    function accessWithoutCode() {
+      isCodeEnabled = false;
+      document.getElementById('adminCodeSection').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'block';
+      refreshAdminLists();
+    }
+    function toggleAdminCodeProtection(checked) {
+      isCodeEnabled = checked;
+      document.getElementById('adminCodeSetup').style.display = checked ? 'block' : 'none';
+    }
+    function setAdminCode() {
+      let newCode = document.getElementById('newAdminCode').value;
+      if(newCode) {
+        adminCode = newCode;
+        alert("Code administrateur enregistré !");
+      } else {
+        alert("Veuillez entrer un code valide.");
+      }
+    }
+    function openStatsWindow() {
+      let statsWindow = window.open("", "Statistics", "width=400,height=300");
+      statsWindow.document.write(`
+        <html>
+          <head>
+            <title>${translations[language]["statistics"] || "Statistiques"}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              button { margin-top: 20px; padding: 10px; }
+            </style>
+          </head>
+          <body>
+            <h2>${translations[language]["statistics"] || "Statistiques"}</h2>
+            <p>${translations[language]["dailySales"]}: ${currency} ${dailyRevenue}</p>
+            <p>${translations[language]["monthlySales"]}: ${currency} ${monthlyRevenue}</p>
+            <button onclick="window.opener.resetStats(); window.close();">${translations[language]["resetStats"]}</button>
+          </body>
+        </html>
+      `);
+      statsWindow.document.close();
+    }
+    function resetStats() {
+      dailyRevenue = 0;
+      monthlyRevenue = 0;
+      backupData();
+      alert(translations[language]["resetStats"] + " !");
+    }
+    function saveAdminSettings() {
+      let newName = document.getElementById('editCafeteriaName').value;
+      if(newName) { document.getElementById('cafeteriaName').innerText = newName; }
+      let newCurrency = document.getElementById('editCurrency').value;
+      if(newCurrency) { currency = newCurrency; renderProducts(); renderOrder(); }
+      let fileInput = document.getElementById('editBackgroundImage');
+      if(fileInput.files && fileInput.files[0]) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+          document.body.style.backgroundImage = `url(${e.target.result})`;
+          localStorage.setItem('backgroundImage', e.target.result);
+        }
+        reader.readAsDataURL(fileInput.files[0]);
+      }
+      backupData();
+      alert("Paramètres sauvegardés !");
+      closeAdminModal();
+    }
+
+    /***** SAUVEGARDE & RESTAURATION DES DONNÉES *****/
+    function backupData() {
+      const data = { categories, products, dailyRevenue, monthlyRevenue, adminCode, currency };
+      localStorage.setItem('cafeteriaData', JSON.stringify(data));
+    }
+    function restoreData() {
+      const data = localStorage.getItem('cafeteriaData');
+      if(data) {
+        const parsed = JSON.parse(data);
+        categories = parsed.categories;
+        products = parsed.products;
+        dailyRevenue = parsed.dailyRevenue;
+        monthlyRevenue = parsed.monthlyRevenue;
+        adminCode = parsed.adminCode;
+        currency = parsed.currency;
+      }
+    }
+    setInterval(backupData, 30000);
+
+    /***** ADMIN PANEL : GESTION DES CATÉGORIES & PRODUITS *****/
+    function refreshAdminLists() {
+      const adminCatList = document.getElementById('adminCategoryList');
+      adminCatList.innerHTML = "";
+      categories.forEach(cat => {
+        const li = document.createElement('li');
+        li.innerText = cat.name;
+        const btnDel = document.createElement('button');
+        btnDel.innerText = "X";
+        btnDel.onclick = () => { removeCategory(cat.id); };
+        li.appendChild(btnDel);
+        adminCatList.appendChild(li);
+      });
+      const adminProdList = document.getElementById('adminProductList');
+      adminProdList.innerHTML = "";
+      products.forEach(prod => {
+        const li = document.createElement('li');
+        li.innerText = `${prod.name} - ${prod.prices.join(", ")} ${currency}`;
+        const btnDel = document.createElement('button');
+        btnDel.innerText = "X";
+        btnDel.onclick = () => { removeProduct(prod.id); };
+        li.appendChild(btnDel);
+        adminProdList.appendChild(li);
+      });
+      const select = document.getElementById('newProductCategory');
+      select.innerHTML = "";
+      categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.id;
+        option.innerText = cat.name;
+        select.appendChild(option);
+      });
+    }
+    function addCategory() {
+      const name = document.getElementById('newCategoryName').value;
+      if(name) {
+        categories.push({ id: Date.now(), name });
+        document.getElementById('newCategoryName').value = "";
+        renderCategories();
+        refreshAdminLists();
+        backupData();
+      }
+    }
+    function removeCategory(id) {
+      categories = categories.filter(cat => cat.id !== id);
+      renderCategories();
+      refreshAdminLists();
+      backupData();
+    }
+    function addProduct() {
+      const name = document.getElementById('newProductName').value;
+      const imageInput = document.getElementById('newProductImage');
+      const pricesStr = document.getElementById('newProductPrices').value;
+      const categoryId = parseInt(document.getElementById('newProductCategory').value);
+      if(name && imageInput.files && imageInput.files[0] && pricesStr) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+          let prices = pricesStr.split(",").map(p => parseFloat(p.trim())).filter(p => !isNaN(p));
+          products.push({ id: Date.now(), name, category: categoryId, image: e.target.result, prices, sold: 0 });
+          renderProducts();
+          refreshAdminLists();
+          backupData();
+        }
+        reader.readAsDataURL(imageInput.files[0]);
+      } else {
+        alert("Veuillez remplir tous les champs.");
+      }
+    }
+    function removeProduct(id) {
+      products = products.filter(prod => prod.id !== id);
+      renderProducts();
+      refreshAdminLists();
+      backupData();
+    }
+
+    /***** INITIALISATION *****/
+    window.onload = function() {
+      restoreData();
+      setLanguage(language);
+      renderCategories();
+      renderProducts();
+      renderOrder();
+      const bg = localStorage.getItem('backgroundImage');
+      if(bg) { document.body.style.backgroundImage = `url(${bg})`; }
+    }
+	// Ouvrir ou créer la base de données IndexedDB
+let db;
+const request = indexedDB.open("ImagesDB", 1);
+
+request.onupgradeneeded = event => {
+  db = event.target.result;
+  // Créer un object store nommé "images" avec une clé auto-incrémentée
+  let store = db.createObjectStore("images", { keyPath: "id", autoIncrement: true });
+  store.createIndex("name", "name", { unique: false });
+};
+
+request.onsuccess = event => {
+  db = event.target.result;
+  console.log("Base de données IndexedDB ouverte avec succès !");
+};
+
+request.onerror = event => {
+  console.error("Erreur lors de l'ouverture de IndexedDB", event);
+};
+
+// Fonction pour ajouter une image dans IndexedDB
+function addImage(imageBlob, name) {
+  const transaction = db.transaction("images", "readwrite");
+  const store = transaction.objectStore("images");
+  const imageRecord = {
+    name: name,
+    blob: imageBlob,
+    date: new Date()
+  };
+  const req = store.add(imageRecord);
+  req.onsuccess = () => {
+    console.log("Image ajoutée !");
+  };
+  req.onerror = e => {
+    console.error("Erreur lors de l'ajout de l'image", e);
+  };
+}
+
+// Exemple d'utilisation : convertir une image uploadée en blob et la stocker
+document.getElementById('uploadImageInput').addEventListener('change', event => {
+  const file = event.target.files[0];
+  if (file) {
+    addImage(file, file.name);
+  }
+});
+
+  </script>
+</body>
+</html>
